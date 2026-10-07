@@ -49,12 +49,16 @@ npx -y skills add sethliao/conference-pitch -g --all
 ## 仓库结构
 
 ```
-skills/conference-pitch/   主 skill（六站流程 + 红线）
-  templates/               口径表 · 邮件正文 · 发信清单
+skills/conference-pitch/   主 skill（六站流程 + 红线 · 中英双语）
+  templates/               proposal.html（8 页骨架+设计系统）· 口径表 · 邮件正文 · 发信清单（中英）
+scripts/                   inject_editor.py（就地编辑层注入：改字/换图/导出PDF）
+                           proposal-editor-layer.html（编辑层真源）· export_pdf.sh（导出+逐页验收）
 docs/                      场景化入门
-knowledge/                 判据库（踩坑 + 谈判结构）
+knowledge/                 判据库 18 条（中英 · 踩坑 + 谈判结构）
 assets/                    管线图
 ```
+
+⭐ **提案不只是文档，是工具链**：`templates/proposal.html` 起手 → 改内容 → `scripts/inject_editor.py` 注入就地编辑层（浏览器里改字/裁剪换图/链接体检/导 PDF）→ `scripts/export_pdf.sh` 出 PDF + 逐页验收图。
 
 ## 作者
 

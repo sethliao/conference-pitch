@@ -1,0 +1,736 @@
+<!-- ═══════════════════════════════════════════════════════════════
+     提案就地编辑器 v2（单一真源 · 2026-10-07）
+
+     用法（注入）：python3 _build/inject_editor.py <目标 html>
+     功能：✏️ 编辑文字 · 🖼 换图（带裁剪）· 🔗 改链接 + 链接体检
+           ⬇️ 导出 PDF · ⬇️ 下载修改版（图片内嵌，自包含）· ♻️ 重置
+     存储：文字 → localStorage（键按文件路径隔离）
+           图片 → IndexedDB Blob（键按文件路径 + 图位隔离）
+     ═══════════════════════════════════════════════════════════════ -->
+
+<!-- EDITOR-CSS:BEGIN -->
+<style data-proposal-editor>
+/* ═══ 工具条 ═══ */
+.editor-bar{position:fixed;left:50%;transform:translateX(-50%);bottom:24px;z-index:999;
+  display:flex;gap:8px;align-items:center;background:rgba(11,15,26,.94);border:1px solid var(--stroke-strong);
+  border-radius:10px;padding:10px 14px;backdrop-filter:blur(8px);box-shadow:0 8px 32px rgba(0,0,0,.5);
+  font-family:var(--inter);font-size:13px;color:var(--text-secondary)}
+.editor-bar button{font-family:var(--inter);font-size:13px;font-weight:600;padding:8px 14px;border-radius:7px;
+  border:1px solid var(--stroke-strong);background:var(--panel);color:var(--text-primary);cursor:pointer;white-space:nowrap}
+.editor-bar button:hover{border-color:var(--blue-500);color:var(--blue-300)}
+.editor-bar button.primary{background:var(--blue-500);border-color:var(--blue-500);color:#fff}
+.editor-bar button.primary:hover{background:var(--blue-400);color:#fff}
+.editor-bar .st{max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.editor-bar .st.saved{color:var(--success)}
+.editor-bar .st.dirty{color:var(--warning)}
+.editor-bar .st.warn{color:var(--warning);cursor:pointer;text-decoration:underline dotted}
+body.edit-mode [contenteditable]{cursor:text}
+body.edit-mode [contenteditable]:hover{outline:2px dashed rgba(77,116,255,.5);outline-offset:2px;border-radius:2px}
+body.edit-mode [contenteditable]:focus{outline:2px solid var(--blue-500);outline-offset:2px;background:rgba(46,91,255,.08);border-radius:2px}
+body.edit-mode .page img{cursor:pointer;outline:2px dashed rgba(77,116,255,.45);outline-offset:3px}
+body.edit-mode .page img:hover{outline-color:var(--blue-400);outline-width:3px}
+body.edit-mode .page a{cursor:pointer;text-decoration:underline dotted var(--blue-400);text-underline-offset:4px}
+
+/* ═══ 弹窗 ═══ */
+.pe-mask{position:fixed;inset:0;z-index:1000;background:rgba(3,5,10,.84);
+  display:flex;align-items:center;justify-content:center;font-family:var(--inter)}
+.pe-modal{background:var(--panel);border:1px solid var(--stroke-strong);border-radius:12px;
+  padding:20px 22px;max-width:96vw;max-height:94vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.6);color:var(--text-primary)}
+.pe-modal h4{font-size:15px;font-weight:700;margin-bottom:4px}
+.pe-sub{font-size:12px;color:var(--text-tertiary);margin-bottom:14px;line-height:1.6}
+.pe-stage{position:relative;display:inline-block;line-height:0;touch-action:none;user-select:none;background:#000}
+.pe-stage>img.pe-src{display:block;max-width:70vw;max-height:60vh}
+.pe-box{position:absolute;left:0;top:0;border:2px solid var(--blue-500);box-shadow:0 0 0 9999px rgba(5,7,13,.66);cursor:move}
+.pe-box .pe-h{position:absolute;width:13px;height:13px;background:var(--blue-500);border:1px solid #fff;border-radius:2px}
+.pe-h[data-d=nw]{left:-7px;top:-7px;cursor:nwse-resize}
+.pe-h[data-d=n]{left:50%;top:-7px;margin-left:-6px;cursor:ns-resize}
+.pe-h[data-d=ne]{right:-7px;top:-7px;cursor:nesw-resize}
+.pe-h[data-d=e]{right:-7px;top:50%;margin-top:-6px;cursor:ew-resize}
+.pe-h[data-d=se]{right:-7px;bottom:-7px;cursor:nwse-resize}
+.pe-h[data-d=s]{left:50%;bottom:-7px;margin-left:-6px;cursor:ns-resize}
+.pe-h[data-d=sw]{left:-7px;bottom:-7px;cursor:nesw-resize}
+.pe-h[data-d=w]{left:-7px;top:50%;margin-top:-6px;cursor:ew-resize}
+.pe-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px}
+.pe-row>*{font-size:12px;color:var(--text-secondary)}
+.pe-seg{display:inline-flex;border:1px solid var(--stroke-strong);border-radius:6px;overflow:hidden}
+.pe-seg button{border:none;border-right:1px solid var(--stroke-strong);background:var(--bg-elevated);color:var(--text-secondary);
+  font-family:var(--inter);font-size:12px;font-weight:600;padding:6px 10px;cursor:pointer}
+.pe-seg button:last-child{border-right:none}
+.pe-seg button.on{background:var(--blue-500);color:#fff}
+.pe-input{background:var(--bg-elevated);border:1px solid var(--stroke-strong);border-radius:6px;color:var(--text-primary);
+  font-family:var(--inter);font-size:13px;padding:8px 10px;min-width:320px}
+.pe-btn{font-family:var(--inter);font-size:13px;font-weight:600;padding:8px 16px;border-radius:7px;
+  border:1px solid var(--stroke-strong);background:var(--bg-elevated);color:var(--text-primary);cursor:pointer}
+.pe-btn:hover{border-color:var(--blue-500);color:var(--blue-300)}
+.pe-btn.ok{background:var(--blue-500);border-color:var(--blue-500);color:#fff}
+.pe-btn.ok:hover{background:var(--blue-400);color:#fff}
+.pe-btn.ghost{background:transparent}
+.pe-end{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
+.pe-list{max-height:52vh;overflow:auto;margin-top:8px}
+.pe-list .pe-li{display:flex;gap:12px;align-items:baseline;padding:12px 0;border-bottom:1px solid var(--stroke-subtle)}
+.pe-list .pe-li:last-child{border-bottom:none}
+.pe-list .pe-fix{white-space:nowrap}
+.pe-mono{font-family:var(--mono);font-size:12px;color:var(--blue-300);word-break:break-all}
+.pe-dim{color:var(--text-tertiary);font-size:12px}
+@media print{
+  .editor-bar{display:none!important}
+  .pe-mask{display:none!important}
+  [contenteditable]{outline:none!important;background:none!important}
+  body.edit-mode [contenteditable]:hover,body.edit-mode [contenteditable]:focus{outline:none!important;background:none!important}
+  body.edit-mode .page img,body.edit-mode .page a{outline:none!important;text-decoration:none!important}
+  /* 🚨 尾页脚本使 .page:last-child 匹配不到 → 最后一页 page-break-after:always 残留 = 多出一张空白页 */
+  section.page:last-of-type{page-break-after:auto!important}
+}
+
+/* ═══ 图片编辑：主区 + 右侧图库 ═══ */
+.pe-body{display:flex;gap:18px;align-items:flex-start}
+.pe-main{flex:0 0 auto}
+.pe-side{width:330px;flex:none;display:flex;flex-direction:column;max-height:64vh}
+.pe-side .pe-input{min-width:0;width:100%}
+.pe-search{padding:7px 10px;font-size:12px}
+.pe-chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.pe-chips button{font-family:var(--inter);font-size:11px;font-weight:600;padding:5px 9px;border-radius:20px;
+  border:1px solid var(--stroke-strong);background:var(--bg-elevated);color:var(--text-secondary);cursor:pointer}
+.pe-chips button.on{background:var(--blue-500);border-color:var(--blue-500);color:#fff}
+.pe-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;overflow:auto;min-height:0;
+  padding-right:4px;max-height:44vh}
+.pe-thumb{border:1px solid var(--stroke-subtle);background:var(--bg-elevated);border-radius:7px;padding:0;
+  cursor:pointer;overflow:hidden;text-align:left;display:flex;flex-direction:column}
+.pe-thumb:hover{border-color:var(--blue-500)}
+.pe-thumb img{width:100%;height:70px;object-fit:cover;display:block;background:#000}
+.pe-thumb span{font-family:var(--inter);font-size:9px;color:var(--text-tertiary);padding:3px 5px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pe-adj{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;margin-top:14px;
+  border-top:1px solid var(--stroke-subtle);padding-top:12px;max-width:70vw}
+.pe-adj label{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--text-secondary)}
+.pe-adj input[type=range]{width:96px;accent-color:var(--blue-500)}
+.pe-adj select{background:var(--bg-elevated);border:1px solid var(--stroke-strong);border-radius:6px;
+  color:var(--text-primary);font-family:var(--inter);font-size:12px;padding:5px 8px}
+.pe-adj span{font-family:var(--mono);font-size:11px;color:var(--blue-300);min-width:34px}
+</style>
+<!-- EDITOR-CSS:END -->
+
+<!-- EDITOR-JS:BEGIN -->
+<script data-proposal-editor>
+/* ═══ 提案就地编辑器 v2 ═══ */
+(function(){
+  'use strict';
+  var SEL = '.page h1,.page h2,.page h3,.page p,.page td,.page .chip,.page .tag,.page .lede,.page .caption,' +
+            '.page .brand,.page .meta-chip,.page .sig,.page .k,.page .v,.page .give,.page .get,' +
+            '.page .step,.page .over,.page .big,.page .spec .row .k,.page .spec .row .v';
+  // ⭐ 键前缀按文件路径生成 —— file:// 下所有 HTML 共享存储，写死会让多份提案互相覆盖
+  var NS = 'edit-' + location.pathname.replace(/[^a-z0-9]/gi, '').slice(-40) + '-';
+  var KEY = function(i){ return NS + 'p' + (i+1); };
+  var META = NS + 'meta';
+  var IKEY = function(slot){ return NS + 'img-' + slot; };
+  var IPFX = NS + 'img-';
+  var pages = Array.prototype.slice.call(document.querySelectorAll('section.page'));
+  var snapshot = document.documentElement.outerHTML;   // ⚠️ 必须在任何改动前抓，作为「原始文件」模板
+  var DOCNAME = (window.__DOCNAME__) || ((document.title || '提案').split(/[·|]/)[0].trim()) || '提案';
+
+  function $(s, el){ return Array.prototype.slice.call((el||document).querySelectorAll(s)); }
+  var objUrls = {};
+
+  /* ── 图片存储：localStorage（data URL）──
+     ⚠️ 为什么不用 IndexedDB：headless / 部分沙箱环境下 open() 会永久挂起（实测），
+        而这里存的是裁剪后 ≤1920px 的 JPEG（每张约 200–350KB），localStorage 够用且同步可靠。 */
+  var IMGKEY = function(slot){ return NS + 'img-' + slot; };
+  var IPFX = NS + 'img-';
+  // 原始图片 src 快照：存页面 HTML 时用它替换掉 data URL，避免同一张图被存两份撑爆配额
+  var ORIG_SRC = {};
+  (function(){
+    var doc = new DOMParser().parseFromString(snapshot, 'text/html');
+    $('img[data-slot]', doc.documentElement).forEach(function(im){
+      ORIG_SRC[im.getAttribute('data-slot')] = im.getAttribute('src');
+    });
+  })();
+  function getUrlsOf(slot, cb){
+    var k;
+    try { k = localStorage.getItem(IMGKEY(slot)); } catch(e){}
+    cb(k || null);
+  }
+  function putUrls(slot, dataUrl){
+    try { localStorage.setItem(IMGKEY(slot), dataUrl); return true; }
+    catch(e){ setSt('⚠️ 浏览器存储满了（Quota）· 先点「♻️ 重置」别的提案页，或减少替换的图', 'dirty'); return false; }
+  }
+  function delUrls(slot){ try { localStorage.removeItem(IMGKEY(slot)); } catch(e){} }
+
+  /* ── 1. 工具条 ── */
+  var bar = document.createElement('div');
+  bar.className = 'editor-bar'; bar.id = 'edit-bar';
+  bar.innerHTML =
+    '<button id="btn-edit">✏️ 编辑内容</button>' +
+    '<button id="btn-link" title="编辑模式下：点已有链接改地址；或先选中文字再点这里加链接">🔗 链接</button>' +
+    '<button id="btn-pdf">⬇️ 导出 PDF</button>' +
+    '<button id="btn-save">⬇️ 下载修改版</button>' +
+    '<button id="btn-reset" title="丢弃浏览器里的修改，回到文件原样">♻️ 重置</button>' +
+    '<span class="st" id="edit-st">装载中…</span>';
+  document.body.appendChild(bar);
+  var st = document.getElementById('edit-st');
+  function setSt(txt, cls){ st.textContent = txt; st.className = 'st' + (cls ? ' ' + cls : ''); }
+
+  /* ── 2. 通用弹窗（Esc 关闭） ── */
+  document.addEventListener('keydown', function(e){
+    if (e.key !== 'Escape') return;
+    document.querySelectorAll('.pe-mask').forEach(function(m){ if (m.__close) m.__close(); });
+    edModal = null;
+  });
+  function modal(html, cls){
+    var mask = document.createElement('div');
+    mask.className = 'pe-mask' + (cls ? ' ' + cls : '');
+    mask.innerHTML = '<div class="pe-modal">' + html + '</div>';
+    document.body.appendChild(mask);
+    mask.__close = function(){ mask.remove(); };
+    mask.addEventListener('mousedown', function(e){ if (e.target === mask) mask.__close(); });
+    return mask;
+  }
+
+  /* ── 3. 编辑模式 ── */
+  var editing = false, debounceT = null;
+  function onInput(){
+    setSt('正在输入…', 'dirty');
+    clearTimeout(debounceT);
+    debounceT = setTimeout(function(){
+      pages.forEach(function(sec, i){ try { localStorage.setItem(KEY(i), sec.innerHTML); } catch(e){} });
+      try { localStorage.setItem(META, new Date().toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'})); } catch(e){}
+      setSt('✓ 已自动存本浏览器（未写回文件）', 'saved');
+      auditLinks(true);
+    }, 700);
+  }
+  // 事件委托：input 冒泡到 document，一次绑定（🚨 首版漏绑导致编辑不保存——自测抓到）
+  document.addEventListener('input', function(e){
+    if (!editing || !e.target || !e.target.closest || !e.target.closest('.page')) return;
+    onInput();
+  });
+  function toggleEdit(){
+    editing = !editing;
+    document.body.classList.toggle('edit-mode', editing);
+    $(SEL).forEach(function(el){
+      if (el.closest('.foot') && el.classList.contains('no')) return;   // 页码不给改
+      if (editing) el.setAttribute('contenteditable', 'true');
+      else el.removeAttribute('contenteditable');
+    });
+    document.getElementById('btn-edit').textContent = editing ? '✅ 完成编辑' : '✏️ 编辑内容';
+    setSt(editing ? '编辑中：点文字改 · 点图片换（可裁剪）· 点链接改地址' : '已退出编辑');
+    if (!editing) clearTimeout(debounceT);
+    if (editing) auditLinks(false);
+  }
+  document.getElementById('btn-edit').addEventListener('click', toggleEdit);
+
+  /* ── 4. 换图 + 裁剪 ── */
+  var picker = document.createElement('input');
+  picker.type = 'file'; picker.accept = 'image/*'; picker.style.display = 'none';
+  document.body.appendChild(picker);
+  var targetImg = null;
+
+  picker.addEventListener('change', function(){
+    var f = picker.files && picker.files[0];
+    if (!f) return;
+    var u = URL.createObjectURL(f);
+    if (edModal && window.__peSetSource) window.__peSetSource(u, f.name);   // 编辑器开着 → 直接换源
+    else openEditor(u, f.name);
+    picker.value = '';
+  });
+
+  /* ── 图片编辑器：左侧裁剪+调整 · 右侧精选图库 ── */
+  var edModal = null;
+
+  function libList(){
+    try {
+      var el = document.getElementById('pe-lib');
+      return el ? JSON.parse(el.textContent || '[]') : [];
+    } catch(e){ return []; }
+  }
+  var CAT_ALIAS = {'devday':'Dev Day','黑客松':'黑客松','hackathon':'黑客松','creality':'Creality',
+    'pasifika':'Pasifika','tcff':'TCFF','参考a':'参考A·分镜','参考b':'参考B·分镜','参考c':'参考C·分镜',
+    '3d打印作品':'3D打印','3d打印':'3D打印','symposium':'Symposium','sharefest':'ShareFest',
+    'momo':'莫莫','封面':'封面','拼图':'拼图','现场':'活动现场','活动现场':'活动现场',
+    '婚礼纪实':'婚礼','颁奖礼现场':'颁奖礼','办公室自拍':'办公室','wedding':'婚礼'};
+  function catLabel(c){
+    var k = String(c || '').toLowerCase();
+    for (var key in CAT_ALIAS){ if (k.indexOf(key) === 0) return CAT_ALIAS[key]; }
+    return c || '其他';
+  }
+
+  function openEditor(url, srcLabel){
+    var tgt = targetImg;
+    var tgtRect = tgt.getBoundingClientRect();
+    var tgtAspect = (tgtRect.width && tgtRect.height) ? (tgtRect.width / tgtRect.height) : 0;
+    var lib = libList();
+    var catSet = {};
+    lib.forEach(function(x){ catSet[catLabel(x.c)] = 1; });
+    var catKeys = Object.keys(catSet).sort();
+    var adj = {bri:100, opa:100, blr:0, bg:'#05070D'};
+
+    function thumb(x){
+      return '<button class="pe-thumb" data-p="' + escapeHtml(x.p) + '" data-c="' + escapeHtml(catLabel(x.c)) +
+             '" data-n="' + escapeHtml(x.n) + '" title="' + escapeHtml(x.n) + '">' +
+             '<img src="' + escapeHtml(x.p) + '" loading="lazy" alt="">' +
+             '<span>' + escapeHtml(catLabel(x.c)) + '</span></button>';
+    }
+
+    var m = modal(
+      '<h4>🖼 图片编辑 · 裁剪 · 调整</h4>' +
+      '<div class="pe-sub">左边拖框裁剪、调明暗；右边从精选图库选或直接上传。确定后图片存在这份提案里，导出修改版时会内嵌进去。</div>' +
+      '<div class="pe-body">' +
+        '<div class="pe-main">' +
+          '<div class="pe-stage" id="pe-stage"><img class="pe-src" id="pe-src" src="' + url + '">' +
+            '<div class="pe-box" id="pe-box">' +
+              ['nw','n','ne','e','se','s','sw','w'].map(function(d){ return '<div class="pe-h" data-d="' + d + '"></div>'; }).join('') +
+            '</div></div>' +
+          '<div class="pe-row"><span>裁剪比例</span>' +
+            '<span class="pe-seg" id="pe-ratio">' +
+              '<button data-r="free">自由</button>' +
+              '<button data-r="slot" class="on">跟随图位</button>' +
+              '<button data-r="1.7778">16:9</button>' +
+              '<button data-r="1.3333">4:3</button>' +
+              '<button data-r="1">1:1</button>' +
+            '</span>' +
+            '<span class="pe-dim" id="pe-dim">—</span></div>' +
+          '<div class="pe-adj">' +
+            '<label>亮度<input type="range" id="pe-bri" min="20" max="150" value="100"><span id="pe-bri-v">100%</span></label>' +
+            '<label>不透明度<input type="range" id="pe-opa" min="10" max="100" value="100"><span id="pe-opa-v">100%</span></label>' +
+            '<label>模糊<input type="range" id="pe-blr" min="0" max="20" value="0"><span id="pe-blr-v">0px</span></label>' +
+            '<label>叠在<select id="pe-bg">' +
+              '<option value="#05070D">深底（提案背景）</option>' +
+              '<option value="#FFFFFF">白底</option>' +
+              '<option value="transparent">透明（存 PNG）</option>' +
+            '</select></label>' +
+            '<button class="pe-btn ghost" id="pe-adj-reset">↺ 调回默认</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="pe-side" id="pe-side">' +
+          '<div class="pe-row" style="margin-top:0"><input class="pe-input pe-search" id="pe-q" placeholder="搜图名…"></div>' +
+          '<div class="pe-chips" id="pe-cats">' +
+            '<button class="on" data-c="*">全部 ' + lib.length + '</button>' +
+            catKeys.map(function(c){
+              var n = lib.filter(function(x){ return catLabel(x.c) === c; }).length;
+              return '<button data-c="' + escapeHtml(c) + '">' + escapeHtml(c) + ' ' + n + '</button>';
+            }).join('') + '</div>' +
+          '<div class="pe-grid" id="pe-grid">' + lib.map(thumb).join('') + '</div>' +
+          '<button class="pe-btn" id="pe-upload" style="width:100%;margin-top:12px">⬆️ 上传自己的图</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="pe-end">' +
+        '<span class="pe-dim" id="pe-src-label" style="margin-right:auto">' + escapeHtml(srcLabel || '') + '</span>' +
+        '<button class="pe-btn ghost" id="pe-orig">↺ 恢复原图</button>' +
+        '<button class="pe-btn ghost" id="pe-cancel">取消</button>' +
+        '<button class="pe-btn ok" id="pe-ok">确定替换</button>' +
+      '</div>', 'editor');
+    edModal = m;
+
+    var srcImg = m.querySelector('#pe-src'), stage = m.querySelector('#pe-stage'),
+        boxEl = m.querySelector('#pe-box'), dimEl = m.querySelector('#pe-dim'),
+        labelEl = m.querySelector('#pe-src-label');
+    var iw = 0, ih = 0, ratio = tgtAspect || 0, box = {x:0,y:0,w:0,h:0};
+
+    function applyAdjPreview(){
+      srcImg.style.filter = 'brightness(' + adj.bri + '%) blur(' + adj.blr + 'px)';
+      srcImg.style.opacity = adj.opa / 100;
+      stage.style.background = adj.bg === 'transparent'
+        ? 'repeating-conic-gradient(#1a1a1a 0 25%, #333 0 50%) 0 0/16px 16px' : adj.bg;
+    }
+    function bindRange(id, key, unit){
+      var el = m.querySelector('#' + id), lab = m.querySelector('#' + id + '-v');
+      el.addEventListener('input', function(){
+        adj[key] = parseInt(el.value, 10);
+        lab.textContent = adj[key] + unit;
+        applyAdjPreview();
+      });
+    }
+    bindRange('pe-bri', 'bri', '%');
+    bindRange('pe-opa', 'opa', '%');
+    bindRange('pe-blr', 'blr', 'px');
+    m.querySelector('#pe-bg').addEventListener('change', function(){ adj.bg = this.value; applyAdjPreview(); });
+    m.querySelector('#pe-adj-reset').addEventListener('click', function(){
+      adj = {bri:100, opa:100, blr:0, bg:'#05070D'};
+      m.querySelector('#pe-bri').value = 100; m.querySelector('#pe-bri-v').textContent = '100%';
+      m.querySelector('#pe-opa').value = 100; m.querySelector('#pe-opa-v').textContent = '100%';
+      m.querySelector('#pe-blr').value = 0;   m.querySelector('#pe-blr-v').textContent = '0px';
+      m.querySelector('#pe-bg').value = '#05070D';
+      applyAdjPreview();
+    });
+
+    function setSource(u, label){
+      srcImg.src = u;
+      srcImg.style.filter = ''; srcImg.style.opacity = '';
+      labelEl.textContent = label || '';
+      applyAdjPreview();
+      if (srcImg.complete && srcImg.naturalWidth){ measure(); fitBox(); }
+    }
+    function measure(){ iw = srcImg.clientWidth; ih = srcImg.clientHeight; }
+    function fitBox(){
+      var w, h;
+      if (ratio > 0){
+        w = Math.min(iw, ih * ratio); h = w / ratio;
+        if (h > ih){ h = ih; w = h * ratio; }
+      } else { w = iw * 0.9; h = ih * 0.9; }
+      box = {x:(iw-w)/2, y:(ih-h)/2, w:w, h:h};
+      render();
+    }
+    function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
+    function render(){
+      boxEl.style.left = box.x + 'px'; boxEl.style.top = box.y + 'px';
+      boxEl.style.width = box.w + 'px'; boxEl.style.height = box.h + 'px';
+      var sx = srcImg.naturalWidth / iw;
+      dimEl.textContent = '裁剪区 ' + Math.round(box.w * sx) + '×' + Math.round(box.h * sx) + ' px（原图 ' +
+                          srcImg.naturalWidth + '×' + srcImg.naturalHeight + '）';
+    }
+    srcImg.addEventListener('load', function(){ measure(); fitBox(); });
+    applyAdjPreview();
+    if (srcImg.complete && srcImg.naturalWidth){ measure(); fitBox(); }
+
+    m.querySelector('#pe-ratio').addEventListener('click', function(e){
+      var b = e.target.closest('button'); if (!b) return;
+      Array.prototype.slice.call(this.querySelectorAll('button')).forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on');
+      var r = b.getAttribute('data-r');
+      ratio = r === 'free' ? 0 : (r === 'slot' ? (tgtAspect || 0) : parseFloat(r));
+      fitBox();
+    });
+
+    function drag(type, ev0){
+      var sx0 = ev0.clientX, sy0 = ev0.clientY, b0 = {x:box.x,y:box.y,w:box.w,h:box.h};
+      var MIN = 30;
+      function move(e){
+        var dx = e.clientX - sx0, dy = e.clientY - sy0;
+        var b = {x:b0.x, y:b0.y, w:b0.w, h:b0.h};
+        if (type === 'move'){
+          b.x = clamp(b0.x + dx, 0, iw - b0.w); b.y = clamp(b0.y + dy, 0, ih - b0.h);
+        } else {
+          if (type.indexOf('e') > -1) b.w = clamp(b0.w + dx, MIN, iw - b0.x);
+          if (type.indexOf('s') > -1) b.h = clamp(b0.h + dy, MIN, ih - b0.y);
+          if (type.indexOf('w') > -1){ var nx = clamp(b0.x + dx, 0, b0.x + b0.w - MIN); b.w = b0.w + (b0.x - nx); b.x = nx; }
+          if (type.indexOf('n') > -1){ var ny = clamp(b0.y + dy, 0, b0.y + b0.h - MIN); b.h = b0.h + (b0.y - ny); b.y = ny; }
+          if (ratio > 0){
+            if (type.length === 2){
+              b.h = b.w / ratio;
+              if (b.y + b.h > ih){ b.h = ih - b.y; b.w = b.h * ratio; }
+              if (b.x + b.w > iw){ b.w = iw - b.x; b.h = b.w / ratio; }
+              if (type.indexOf('w') > -1) b.x = b0.x + b0.w - b.w;
+              if (type.indexOf('n') > -1) b.y = b0.y + b0.h - b.h;
+            } else if (type === 'e' || type === 'w'){
+              var nh = clamp(b.w / ratio, MIN, ih), cy = b0.y + b0.h / 2;
+              b.y = clamp(cy - nh / 2, 0, ih - nh); b.h = nh;
+            } else {
+              var nw = clamp(b.h * ratio, MIN, iw), cx = b0.x + b0.w / 2;
+              b.x = clamp(cx - nw / 2, 0, iw - nw); b.w = nw;
+            }
+          }
+        }
+        box = b; render();
+      }
+      function up(){ window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up); }
+      window.addEventListener('mousemove', move); window.addEventListener('mouseup', up);
+    }
+    boxEl.addEventListener('mousedown', function(e){
+      if (e.target.classList.contains('pe-h')) return;
+      e.preventDefault(); drag('move', e);
+    });
+    m.addEventListener('mousedown', function(e){
+      var h = e.target.closest('.pe-h'); if (!h) return;
+      e.preventDefault(); e.stopPropagation(); drag(h.getAttribute('data-d'), e);
+    });
+
+    /* ── 右侧图库：分类筛选 + 搜索 + 点击换源 ── */
+    var chipWrap = m.querySelector('#pe-cats'), gridWrap = m.querySelector('#pe-grid'),
+        qEl = m.querySelector('#pe-q'), cat = '*';
+    function filterGrid(){
+      var q = (qEl.value || '').trim().toLowerCase();
+      Array.prototype.slice.call(gridWrap.querySelectorAll('.pe-thumb')).forEach(function(b){
+        var cn = b.getAttribute('data-n').toLowerCase(), cc = b.getAttribute('data-c');
+        var byCat = (cat === '*') || (cc === cat);
+        var byQ = !q || cn.indexOf(q) > -1;
+        b.style.display = (byCat && byQ) ? '' : 'none';
+      });
+    }
+    chipWrap.addEventListener('click', function(e){
+      var b = e.target.closest('button'); if (!b) return;
+      Array.prototype.slice.call(this.querySelectorAll('button')).forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on'); cat = b.getAttribute('data-c'); filterGrid();
+    });
+    qEl.addEventListener('input', filterGrid);
+    gridWrap.addEventListener('click', function(e){
+      var b = e.target.closest('.pe-thumb'); if (!b) return;
+      setSource(b.getAttribute('data-p'), b.getAttribute('data-n'));
+    });
+    m.querySelector('#pe-upload').addEventListener('click', function(){ picker.click(); });
+
+    function finish(){
+      if (!iw){ setSt('⚠️ 图片还没读完，稍等再试'); return; }
+      var sx = srcImg.naturalWidth / iw, sy = srcImg.naturalHeight / ih;
+      var sw = Math.max(2, Math.round(box.w * sx)), sh = Math.max(2, Math.round(box.h * sy));
+      var sxx = Math.max(0, Math.round(box.x * sx)), syy = Math.max(0, Math.round(box.y * sy));
+      if (sxx + sw > srcImg.naturalWidth) sw = srcImg.naturalWidth - sxx;
+      if (syy + sh > srcImg.naturalHeight) sh = srcImg.naturalHeight - syy;
+      var cap = 1920, sc = Math.min(1, cap / sw);
+      var c = document.createElement('canvas');
+      c.width = Math.max(2, Math.round(sw * sc)); c.height = Math.max(2, Math.round(sh * sc));
+      var ctx = c.getContext('2d');
+      var transparent = adj.bg === 'transparent';
+      if (!transparent){ ctx.fillStyle = adj.bg; ctx.fillRect(0, 0, c.width, c.height); }
+      ctx.imageSmoothingQuality = 'high';
+      ctx.filter = 'brightness(' + adj.bri + '%) blur(' + (adj.blr * sc).toFixed(1) + 'px)';
+      ctx.globalAlpha = adj.opa / 100;
+      ctx.drawImage(srcImg, sxx, syy, sw, sh, 0, 0, c.width, c.height);
+      var slot = slotOf(tgt), dataUrl;
+      try { dataUrl = c.toDataURL(transparent ? 'image/png' : 'image/jpeg', 0.88); }
+      catch(e){ setSt('⚠️ 图片读取失败（可能是跨域图），换张本地图试试'); m.__close(); return; }
+      if (putUrls(slot, dataUrl)){
+        applyUrl(tgt, dataUrl);
+        saveNow();
+        setSt('🖼 已替换（' + c.width + '×' + c.height + (adj.bri !== 100 || adj.opa !== 100 || adj.blr ? ' · 含调整' : '') + '）', 'saved');
+      }
+      edModal = null;
+      m.__close();
+    }
+    m.querySelector('#pe-ok').addEventListener('click', finish);
+    m.querySelector('#pe-cancel').addEventListener('click', function(){ edModal = null; m.__close(); });
+    m.querySelector('#pe-orig').addEventListener('click', function(){
+      restore(slotOf(tgt), tgt); edModal = null; m.__close();
+    });
+    window.__peSetSource = setSource;
+  }
+
+  function slotOf(img){
+    if (!img.getAttribute('data-slot')){
+      img.setAttribute('data-slot', 'slot-' + Math.random().toString(36).slice(2, 9));
+    }
+    return img.getAttribute('data-slot');
+  }
+  function applyUrl(img, dataUrl){ img.dataset.edited = '1'; img.src = dataUrl; }
+
+  /* ── 5. 图片：点图即换（编辑模式下）· 刷新后从 localStorage 还原 ── */
+  function restoreImages(){
+    var n = 0;
+    try {
+      Object.keys(localStorage).forEach(function(k){
+        if (k.indexOf(IPFX) !== 0) return;
+        var slot = k.slice(IPFX.length), url = localStorage.getItem(k);
+        if (!url) return;
+        $('img[data-slot="' + slot + '"]').forEach(function(img){ applyUrl(img, url); n++; });
+      });
+    } catch(e){}
+    return n;
+  }
+  function restore(slot, img){
+    delUrls(slot);
+    img.removeAttribute('data-edited');
+    img.src = ORIG_SRC[slot] || '';
+    saveNow();
+    setSt('↺ 已恢复原图', 'saved');
+  }
+
+  // 捕获阶段拦截：编辑模式下点链接不跳转 → 改地址；点图片 → 开图片编辑器
+  document.addEventListener('click', function(e){
+    if (!editing) return;
+    var t = e.target;
+    if (!t || !t.closest) return;
+    var a = t.closest('a');
+    if (a && a.closest('.page')){ e.preventDefault(); e.stopPropagation(); openLink(a); return; }
+    var img = t.closest('.page img');
+    if (img){ e.preventDefault(); e.stopPropagation(); targetImg = img; picker.click(); }
+  }, true);
+
+  /* ── 6. 链接编辑 + 链接体检 ── */
+  function normAddr(s){
+    s = String(s || '').trim().toLowerCase();
+    s = s.replace(/^mailto:/, '').replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/+$/, '');
+    return s;
+  }
+  function looksLikeAddress(t){
+    t = String(t || '').trim();
+    return /^[\w.+-]+@[\w-]+\.[\w.]+$/.test(t) || /^(https?:\/\/)?([\w-]+\.)+[a-z]{2,}(\/\S*)?$/i.test(t);
+  }
+  function addressOf(href){
+    if (/^mailto:/i.test(href)) return href.replace(/^mailto:/i, '').toLowerCase();
+    try { return normAddr(new URL(href, location.href).host + new URL(href, location.href).pathname); }
+    catch(e){ return normAddr(href); }
+  }
+  function pageForSave(sec){
+    // 存页面时把 data URL 换回原始相对路径 —— 图片单独存在 img- 键里，别存两份
+    var clone = sec.cloneNode(true);
+    $('img[data-slot]', clone).forEach(function(im){
+      if ((im.getAttribute('src') || '').indexOf('data:') === 0){
+        im.setAttribute('src', ORIG_SRC[im.getAttribute('data-slot')] || '');
+      }
+    });
+    return clone.innerHTML;
+  }
+  function saveNow(){
+    pages.forEach(function(sec, i){ try { localStorage.setItem(KEY(i), pageForSave(sec)); } catch(e){} });
+    try { localStorage.setItem(META, new Date().toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'})); } catch(e){}
+  }
+  function displayOf(href){
+    if (/^mailto:/i.test(href)) return href.replace(/^mailto:/i, '');
+    try {
+      var u = new URL(href, location.href);
+      return (u.host.replace(/^www\./, '') + (u.pathname !== '/' ? u.pathname : '')).replace(/\/$/, '');
+    } catch(e){ return normAddr(href); }
+  }
+  function auditLinks(silent){
+    var bad = [];
+    $('a', document).forEach(function(a){
+      if (!a.closest('.page')) return;
+      var txt = (a.textContent || '').trim(), href = a.getAttribute('href') || '';
+      if (!txt || !href) return;
+      if (!looksLikeAddress(txt)) return;
+      if (normAddr(txt) === addressOf(href)) return;
+      bad.push({a:a, txt:txt, href:href});
+    });
+    if (bad.length){
+      setSt('⚠️ ' + bad.length + ' 处链接文字与地址不一致（点我看）', 'warn');
+      st.onclick = function(){ showAudit(bad); };
+    } else if (silent){
+      setSt('✓ 已自动存本浏览器（未写回文件）', 'saved');
+      st.onclick = null;
+    } else { st.onclick = null; }
+    return bad;
+  }
+  function showAudit(bad){
+    var rows = bad.map(function(b, i){
+      var page = b.a.closest('section.page');
+      var pi = pages.indexOf(page) + 1;
+      return '<div class="pe-li"><span class="pe-dim">P' + pi + '</span>' +
+             '<span style="flex:1"><span class="pe-mono">文字：' + escapeHtml(b.txt) + '</span><br>' +
+             '<span class="pe-dim">地址：' + escapeHtml(b.href) + '</span></span>' +
+             '<button class="pe-btn pe-fix" data-i="' + i + '" data-mode="href" title="把点击地址改成文字里那个">地址 ← 文字</button>' +
+             '<button class="pe-btn pe-fix" data-i="' + i + '" data-mode="text" title="把显示文字改成真实地址">文字 ← 地址</button></div>';
+    }).join('');
+    var m = modal('<h4>🔗 链接体检 · ' + bad.length + ' 处不一致</h4>' +
+      '<div class="pe-sub">链接的「显示文字」被改过，但点击地址还是旧的 —— 对方点下去会去错地方。点右边按钮一键对齐。</div>' +
+      '<div class="pe-list">' + rows + '</div>' +
+      '<div class="pe-end"><button class="pe-btn ghost" id="pe-close">关闭</button></div>');
+    m.addEventListener('click', function(e){
+      var b = e.target.closest('.pe-fix'); if (!b) return;
+      var it = bad[parseInt(b.getAttribute('data-i'), 10)];
+      var mode = b.getAttribute('data-mode');
+      if (mode === 'text'){                       // 显示文字 ← 真实地址（地址是对的，文字写错了）
+        it.a.textContent = displayOf(it.href);
+      } else {                                    // 点击地址 ← 显示文字（文字是对的，地址指错了）
+        it.a.setAttribute('href', /^[\w.+-]+@/.test(it.txt)
+          ? ('mailto:' + it.txt.trim())
+          : ('https://' + normAddr(it.txt).replace(/^https?:\/\//, '').replace(/^\/+/, '')));
+      }
+      saveNow();
+      setSt('🔗 已修正 1 处链接（记得「下载修改版」固化）', 'saved');
+      b.textContent = '✓ 已修'; b.disabled = true;
+      setTimeout(function(){ auditLinks(false); }, 200);
+    });
+    m.querySelector('#pe-close').addEventListener('click', function(){ m.__close(); });
+  }
+  function escapeHtml(s){
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function openLink(a){
+    var m = modal(
+      '<h4>🔗 改链接</h4>' +
+      '<div class="pe-sub">改的是「点下去去哪」。显示文字排版也能同时在页面上改。</div>' +
+      '<div class="pe-row"><span style="width:64px">显示文字</span><input class="pe-input" id="pe-t" value=""></div>' +
+      '<div class="pe-row"><span style="width:64px">链接地址</span><input class="pe-input" id="pe-u" value="" placeholder="https:// 或 mailto:"></div>' +
+      '<div class="pe-end">' +
+        '<button class="pe-btn ghost" id="pe-unlink">移除链接</button>' +
+        '<button class="pe-btn ghost" id="pe-cancel">取消</button>' +
+        '<button class="pe-btn ok" id="pe-ok">保存</button>' +
+      '</div>');
+    var t = m.querySelector('#pe-t'), u = m.querySelector('#pe-u');
+    t.value = (a.textContent || '').trim();
+    u.value = a.getAttribute('href') || '';
+    function save(){
+      var url = (u.value || '').trim();
+      if (url && !/^(https?:|mailto:|tel:|#)/i.test(url)) url = 'https://' + url.replace(/^\/+/, '');
+      a.textContent = (t.value || '').trim();
+      if (url) a.setAttribute('href', url); else a.removeAttribute('href');
+      saveNow();
+      if (!a.getAttribute('href')) { var span = document.createElement('span'); span.innerHTML = a.innerHTML; a.parentNode.replaceChild(span, a); }
+      setSt('🔗 链接已改（记得「下载修改版」固化）', 'saved');
+      m.__close(); auditLinks(false);
+    }
+    m.querySelector('#pe-ok').addEventListener('click', save);
+    m.querySelector('#pe-cancel').addEventListener('click', function(){ m.__close(); });
+    m.querySelector('#pe-unlink').addEventListener('click', function(){
+      var span = document.createElement('span'); span.innerHTML = a.innerHTML;
+      a.parentNode.replaceChild(span, a); m.__close();
+      setSt('已移除链接', 'saved');
+    });
+    setTimeout(function(){ u.focus(); u.select(); }, 30);
+  }
+  document.getElementById('btn-link').addEventListener('click', function(){
+    if (!editing) toggleEdit();
+    var sel = window.getSelection();
+    var txt = sel && String(sel).trim();
+    if (txt && sel.rangeCount && sel.anchorNode && sel.anchorNode.parentElement.closest('.page')){
+      var range = sel.getRangeAt(0);
+      var a = document.createElement('a');
+      try { a.appendChild(range.extractContents()); range.insertNode(a); }
+      catch(err){ setSt('⚠️ 选中区域太复杂，先选中纯文字'); return; }
+      openLink(a);
+    } else {
+      var bad = auditLinks(false);
+      if (!bad.length) setSt('✓ 没发现链接不一致。想改某个链接：编辑模式下直接点它', 'saved');
+    }
+  });
+
+  /* ── 7. 导出 PDF ── */
+  document.getElementById('btn-pdf').addEventListener('click', function(){ window.print(); });
+
+  /* ── 8. 下载修改版（图片转 data URL 内嵌，产出自包含单文件） ── */
+  document.getElementById('btn-save').addEventListener('click', function(){
+    setSt('正在打包（含图片）…', 'dirty');
+    setTimeout(function(){
+      var doc = new DOMParser().parseFromString(snapshot, 'text/html');
+      var tplPages = $('section.page', doc.documentElement);
+      if (tplPages.length !== pages.length){ setSt('⚠️ 模板页数不符，未导出'); return; }
+      pages.forEach(function(sec, i){ tplPages[i].innerHTML = sec.innerHTML; });
+      try {                                     // 换过的图位直接写成 data URL → 产出自包含单文件
+        Object.keys(localStorage).forEach(function(k){
+          if (k.indexOf(IPFX) !== 0) return;
+          var slot = k.slice(IPFX.length), url = localStorage.getItem(k);
+          $('img[data-slot="' + slot + '"]', doc.documentElement)
+            .forEach(function(im){ im.setAttribute('src', url); });
+        });
+      } catch(e){}
+      var html = '<!doctype html>\n' + doc.documentElement.outerHTML;
+      var blob = new Blob([html], {type: 'text/html'});
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = DOCNAME + '-修改版-' + new Date().toISOString().slice(0,10) + '.html';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+      setSt('⬇️ 已下载（含内嵌图片）· 拖回本目录覆盖 index.html 即固化', 'saved');
+    }, 30);
+  });
+
+  /* ── 9. 重置 ── */
+  document.getElementById('btn-reset').addEventListener('click', function(){
+    if (!confirm('丢弃浏览器里的全部修改（文字 + 换过的图），回到文件原样？')) return;
+    pages.forEach(function(_, i){ try { localStorage.removeItem(KEY(i)); } catch(e){} });
+    try { localStorage.removeItem(META); } catch(e){}
+    try {
+      Object.keys(localStorage).forEach(function(k){
+        if (k.indexOf(IPFX) === 0) localStorage.removeItem(k);
+      });
+    } catch(e){}
+    location.reload();
+  });
+
+  /* ── 10. 启动：恢复上次的文字 / 图片 ── */
+  var restored = 0, savedAt = null;
+  try { savedAt = localStorage.getItem(META); } catch(e){}
+  pages.forEach(function(sec, i){
+    var v = null;
+    try { v = localStorage.getItem(KEY(i)); } catch(e){}
+    if (v){ sec.innerHTML = v; restored++; }
+  });
+  var imgN = restoreImages();
+  (function(){
+    setTimeout(function(){
+      if (restored) setSt('已恢复 ' + restored + ' 页文字' + (imgN ? ' + ' + imgN + ' 张图' : '') + '（未固化）' + (savedAt ? ' · ' + savedAt : ''), 'saved');
+      else if (imgN) setSt('已恢复 ' + imgN + ' 张换过的图 · 点「编辑内容」继续', 'saved');
+      else setSt('未编辑 · 点「编辑内容」开始');
+      auditLinks(true);
+    }, 300);
+  })();
+})();
+</script>
+<!-- EDITOR-JS:END -->

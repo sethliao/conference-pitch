@@ -39,7 +39,21 @@ Then follow [docs/从第一个大会开始.md](docs/从第一个大会开始.md)
 - **One identity only.** Stacked identities halve the credibility of each.
 - **Honest, never self-deprecating.** One "just practicing" kills your pricing power — grep it out before finalizing.
 
-More field notes → [knowledge/判据库.md](knowledge/判据库.md) (18 rules, all from real runs)
+More field notes → [knowledge/判据库.md](knowledge/判据库.md) · [field-notes.en.md](knowledge/field-notes.en.md) (18 rules, all from real runs)
+
+## Repo layout
+
+```
+skills/conference-pitch/   main skill (6-station pipeline + red lines · CN & EN)
+  templates/               proposal.html (8-page skeleton + design system) · messaging table · email · send-checklist (CN & EN)
+scripts/                   inject_editor.py (in-place editor: edit text / swap images / export PDF)
+                           proposal-editor-layer.html (editor source) · export_pdf.sh (export + per-page visual check)
+docs/                      scenario quickstart
+knowledge/                 18 field notes (CN & EN · traps + negotiation structure)
+assets/                    pipeline diagram
+```
+
+⭐ **The proposal is a toolchain, not just a document**: start from `templates/proposal.html` → fill content → `scripts/inject_editor.py` injects the in-place editor (edit text, crop/swap images, link health-check, export PDF in the browser) → `scripts/export_pdf.sh` exports PDF + per-page renders for visual acceptance.
 
 ## Author
 

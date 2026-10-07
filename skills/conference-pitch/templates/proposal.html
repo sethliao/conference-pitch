@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<title><大会名> 现场内容与媒体合作 · <你的名字></title>
+<style>
+:root{
+  --blue-700:#1A38B8; --blue-500:#2E5BFF; --blue-400:#4D74FF; --blue-300:#7D9BFF; --blue-100:#DCE6FF;
+  --amber-500:#FFB454;
+  --success:#3DD68C; --warning:#FBBF24;
+  --bg-base:#05070D; --bg-elevated:#0B0F1A; --panel:#101725;
+  --stroke-subtle:#1E2A44; --stroke-strong:#2E3D5F;
+  --text-primary:#F2F5FA; --text-secondary:#9AA7BD; --text-tertiary:#5B6B85;
+  --grid-line:#16203A;
+  --mono:'JetBrains Mono',ui-monospace,monospace;
+  --cjk:'Noto Sans SC','Noto Sans CJK SC',sans-serif;
+  --inter:'Inter',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{background:var(--bg-base);font-family:var(--cjk);color:var(--text-primary);font-size:16px;line-height:28px}
+a{color:var(--blue-300);text-decoration:none}
+.grid-bg{position:absolute;inset:0;z-index:0;
+  background-image:linear-gradient(var(--grid-line) 1px,transparent 1px),linear-gradient(90deg,var(--grid-line) 1px,transparent 1px);
+  background-size:64px 64px;opacity:.55}
+.page{width:1920px;height:1080px;background:var(--bg-base);position:relative;margin:0 auto 48px;overflow:hidden;padding:88px}
+@page{size:1920px 1080px;margin:0}
+@media print{
+  body{background:#fff}
+  .page{margin:0;page-break-after:always;page-break-inside:avoid}
+  .page:last-child{page-break-after:auto}
+}
+.wrap{position:relative;z-index:1;height:100%;display:flex;flex-direction:column}
+
+.sect-head{margin-bottom:36px}
+.sect-head .over{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:8%;text-transform:uppercase;color:var(--blue-300);margin-bottom:12px}
+.sect-head h2{font-size:44px;font-weight:700;line-height:52px;letter-spacing:-.5px}
+.sect-head .rule{height:1px;background:var(--stroke-subtle);margin-top:16px}
+
+.foot{position:absolute;left:88px;right:88px;bottom:36px;display:flex;justify-content:space-between;align-items:center;z-index:2}
+.foot .sig{font-size:13px;color:var(--text-tertiary);font-weight:500}
+.foot .no{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:8%;color:var(--blue-500)}
+
+.chip{display:inline-flex;align-items:center;padding:8px 16px;border:1px solid var(--stroke-strong);border-radius:6px;font-size:13px;font-weight:500;color:var(--text-secondary)}
+.step{width:28px;height:28px;background:var(--blue-500);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--inter);font-size:14px;font-weight:700;color:#fff;flex:none}
+
+/* 封面 */
+.cover{padding:0}
+.cover .shot{position:absolute;inset:0;z-index:0}
+.cover .shot img{width:100%;height:100%;object-fit:cover;object-position:center center}
+.cover .shot::after{content:'';position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(5,7,13,.72) 0%,rgba(5,7,13,.30) 38%,rgba(5,7,13,.88) 78%,rgba(5,7,13,.97) 100%)}
+.cover .inner{position:relative;z-index:2;height:100%;display:flex;flex-direction:column;justify-content:space-between;padding:80px 88px}
+.cover .top{display:flex;justify-content:space-between;align-items:flex-start}
+.cover .brand{font-family:var(--mono);font-size:11px;letter-spacing:8%;color:var(--text-secondary);text-transform:uppercase}
+.cover .meta-chip{font-family:var(--mono);font-size:11px;letter-spacing:6%;color:var(--blue-300);border:1px solid var(--stroke-strong);border-radius:6px;padding:8px 16px;background:rgba(11,15,26,.7)}
+.cover .bottom{max-width:1420px}
+.cover h1{font-size:72px;font-weight:800;line-height:1.16;letter-spacing:-1.5px;margin-bottom:24px}
+.cover h1 .br{color:var(--blue-500)}
+.cover .lede{font-size:23px;line-height:1.66;color:var(--text-secondary);max-width:1140px;margin-bottom:28px}
+.cover .lede b{color:var(--text-primary);font-weight:600}
+.cover .who{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+/* 封面右下角图片批注 */
+.cover .caption{position:absolute;right:88px;bottom:40px;z-index:3;
+  font-size:16px;line-height:1.6;color:var(--text-secondary);text-align:right;
+  max-width:520px;background:rgba(5,7,13,.72);border-left:2px solid var(--blue-500);
+  padding:12px 18px;border-radius:0 6px 6px 0}
+.cover .caption b{color:var(--text-primary);font-weight:600}
+
+/* 通用两栏 */
+.cols{display:flex;flex:1;min-height:0}
+.cols .col{padding:0 44px}
+.cols .col:first-child{padding-left:0}
+.cols .col:last-child{padding-right:0}
+.vstitch{border-left:1px solid var(--stroke-subtle)}
+.txt{font-size:23px;line-height:1.78;color:var(--text-secondary)}
+.txt p+p{margin-top:20px}
+.txt b{color:var(--text-primary);font-weight:600}
+.txt .hl{color:var(--blue-300);font-weight:600}
+
+/* 规格板 */
+.spec{background:var(--panel);border:1px solid var(--stroke-subtle);border-radius:10px;padding:40px 44px}
+.spec .big{font-family:var(--inter);font-weight:800;font-size:132px;line-height:1;color:var(--blue-500);letter-spacing:-3px}
+.spec .big small{font-family:var(--cjk);font-size:34px;font-weight:600;color:var(--text-primary);letter-spacing:0;margin-left:10px}
+.spec .rows{margin-top:28px}
+.spec .row{display:flex;justify-content:space-between;align-items:baseline;padding:15px 0;border-top:1px solid var(--stroke-subtle)}
+.spec .row:first-child{border-top:none;padding-top:4px}
+.spec .row .k{font-size:19px;color:var(--text-secondary);font-weight:500}
+.spec .row .v{font-size:20px;font-weight:600;text-align:right;color:var(--text-primary)}
+
+/* 卡片网格 */
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:20px;flex:1;min-height:0}
+.cards.one{grid-template-columns:1fr}
+.card{background:var(--panel);border:1px solid var(--stroke-subtle);border-radius:10px;padding:28px 32px;display:flex;flex-direction:column}
+.card .top{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+.card .top h3{font-size:26px;font-weight:700;line-height:34px}
+.card p{font-size:19px;line-height:1.7;color:var(--text-secondary);flex:1}
+.card .meta{margin-top:14px;display:flex;gap:10px;flex-wrap:wrap}
+.card .tag{font-family:var(--mono);font-size:11px;letter-spacing:4%;color:var(--blue-300);border:1px solid var(--stroke-strong);border-radius:4px;padding:5px 12px}
+
+/* 报价表 */
+.price{width:100%;border-collapse:collapse}
+.price th{font-family:var(--mono);font-size:11px;letter-spacing:6%;text-transform:uppercase;color:var(--text-tertiary);text-align:left;padding:0 0 14px;border-bottom:1px solid var(--stroke-strong)}
+.price th:last-child{text-align:right}
+.price td{font-size:20px;padding:13px 0;border-bottom:1px solid var(--stroke-subtle);color:var(--text-primary)}
+.price td:last-child{text-align:right;font-family:var(--inter);font-weight:700;font-size:22px;color:var(--blue-300);white-space:nowrap}
+.price td small{display:block;font-size:15px;color:var(--text-tertiary);font-weight:400;margin-top:2px}
+.price tr.hero td{background:rgba(46,91,255,.10)}
+.price tr.hero td:last-child{font-size:28px;color:var(--success)}
+/* 报价页：内容较高，收紧行距与留白，避免压到页脚 */
+.page.price-page .sect-head{margin-bottom:26px}
+.page.price-page .cols .col{padding:0 38px}
+
+/* 置换表 */
+.swap{display:flex;flex-direction:column;gap:16px}
+.swap .item{display:flex;align-items:center;gap:24px;background:var(--panel);border:1px solid var(--stroke-subtle);border-radius:10px;padding:22px 28px}
+.swap .item .arw{font-family:var(--mono);font-size:22px;color:var(--blue-500);flex:none}
+.swap .item .give{font-size:21px;font-weight:600;flex:1}
+.swap .item .get{font-size:20px;color:var(--blue-300);font-weight:600;flex:1;text-align:right}
+
+/* 时间表 */
+.tl{width:100%;border-collapse:collapse}
+.tl td{font-size:21px;padding:16px 0;border-bottom:1px solid var(--stroke-subtle);vertical-align:top}
+.tl td:first-child{width:200px;font-family:var(--mono);font-size:17px;color:var(--blue-300);font-weight:600;padding-right:24px}
+.tl td:last-child{color:var(--text-secondary)}
+
+/* 凭证三栏 */
+.cred .col{min-width:0}
+.cred .photo{width:100%;height:400px;border-radius:8px;overflow:hidden;border:1px solid var(--stroke-subtle)}
+.cred .photo img{width:100%;height:100%;object-fit:cover;display:block}
+.cred .cap h3{font-size:25px;font-weight:700;margin:22px 0 10px}
+.cred .cap p{font-size:18px;line-height:1.7;color:var(--text-secondary)}
+
+/* 拼图页 */
+.mosaic-w .mo .cap, .mosaic .mo .cap, .mo .cap { display: none }
+
+/* 联系表 */
+.credits .row{display:flex;justify-content:space-between;align-items:baseline;padding:16px 0;border-bottom:1px solid var(--stroke-subtle)}
+.credits .row:last-child{border-bottom:none}
+.credits .k{font-size:19px;color:var(--text-secondary);font-weight:500}
+.credits .v{font-family:var(--inter);font-size:21px;font-weight:600}
+
+/* 引用块 */
+.quote{background:var(--bg-elevated);border-left:3px solid var(--blue-500);padding:24px 32px;border-radius:0 8px 8px 0}
+.quote p{font-size:21px;line-height:1.75;color:var(--text-secondary)}
+.quote p+p{margin-top:14px}
+.quote b{color:var(--text-primary);font-weight:600}
+.src{font-size:15px;color:var(--text-tertiary);margin-top:12px;font-family:var(--mono);letter-spacing:1%}
+
+</style>
+
+</head>
+<body>
+
+<!-- ═══ P1 封面：一句话锚 + 身份 chips + 照片批注（防误认 AI 生成） ═══ -->
+<section class="page cover">
+  <div class="shot"><img src="img/cover.jpg" alt="封面现场照"></div>
+  <div class="inner">
+    <div class="top">
+      <div class="brand"><大会名> · <日期> · <城市></div>
+      <div class="meta-chip">媒体合作 · 置换 · 报价</div>
+    </div>
+    <div class="bottom">
+      <h1><N 月 N 日，N 位开发者进场时，><br><span class="br">看到的那套内容，我来做。</span></h1>
+      <p class="lede">我是<b><名字></b>，<口径#1 学历>、<一句话主身份>。<b><日期></b>希望以媒体身份在现场，为大会做一套完整的内容交付。</p>
+      <div class="who"><span class="chip"><身份1></span><span class="chip"><身份2></span><span class="chip"><语言></span></div>
+    </div>
+  </div>
+  <div class="caption">封面照片：<b><XX 2024 现场，我在其中></b>（实拍，非 AI 生成）</div>
+</section>
+
+<!-- ═══ P2 四件交付：主片 / 讲师拆解 / 摄影 / 盘点（核心页） ═══ -->
+<section class="page">
+  <div class="wrap">
+    <div class="sect-head"><div class="over">Deliverables</div><h2>我能在现场交付的四件事</h2><div class="rule"></div></div>
+    <div class="cards">
+      <div class="card"><div class="top"><div class="step">1</div><h3>主片 <60-90 秒></h3></div><p><一句话：横屏/零旁白/同期声，闭幕式前能播></p><div class="meta"><span class="tag"><规格></span></div></div>
+      <div class="card"><div class="top"><div class="step">2</div><h3>讲师 / 开发者拆解</h3></div><p><单人访谈，前期沟通 + 现场拍摄></p><div class="meta"><span class="tag"><规格></span></div></div>
+      <div class="card"><div class="top"><div class="step">3</div><h3>活动现场摄影</h3></div><p><一天一场，含当天精选 30 张></p><div class="meta"><span class="tag"><规格></span></div></div>
+      <div class="card"><div class="top"><div class="step">4</div><h3>会后盘点</h3></div><p><照片转 Reel / 图文回顾></p><div class="meta"><span class="tag"><规格></span></div></div>
+    </div>
+  </div>
+  <div class="foot"><span class="sig"><大会名></span><span class="no">2/8</span></div>
+</section>
+
+<!-- ═══ P3 三条凭证：身份 + 过往现场 + 代表作数据（通用，基本不动） ═══ -->
+<section class="page cred">
+  <div class="wrap">
+    <div class="sect-head"><div class="over">Credentials</div><h2>三条凭证</h2><div class="rule"></div></div>
+    <div class="cols">
+      <div class="col"><div class="photo"><img src="img/cred-1.jpg" alt="凭证1"></div><div class="cap"><h3><凭证1 标题></h3><p><一句话+数据></p></div></div>
+      <div class="col vstitch"><div class="photo"><img src="img/cred-2.jpg" alt="凭证2"></div><div class="cap"><h3><凭证2 标题></h3><p><一句话+数据></p></div></div>
+      <div class="col vstitch"><div class="photo"><img src="img/cred-3.jpg" alt="凭证3"></div><div class="cap"><h3><凭证3 标题></h3><p><一句话+数据></p></div></div>
+    </div>
+  </div>
+  <div class="foot"><span class="sig"><大会名></span><span class="no">3/8</span></div>
+</section>
+
+<!-- ═══ P4 ⭐主片怎么做：实测规格（最强一页，只讲自己的规格，不提拆解过谁） ═══ -->
+<section class="page">
+  <div class="wrap">
+    <div class="sect-head"><div class="over">The Film</div><h2>主片怎么做</h2><div class="rule"></div></div>
+    <div class="cols">
+      <div class="col"><div class="spec"><div class="big"><60><small>秒</small></div>
+        <div class="rows">
+          <div class="row"><span class="k">画幅</span><span class="v"><1920×1080 横屏></span></div>
+          <div class="row"><span class="k">旁白</span><span class="v"><零旁白 · 同期声></span></div>
+          <div class="row"><span class="k">镜头结构</span><span class="v"><六段顺序></span></div>
+          <div class="row"><span class="k">交付时间</span><span class="v"><闭幕式前></span></div>
+        </div></div></div>
+      <div class="col vstitch"><div class="txt"><p><为什么是这个规格：一段讲镜头顺序的逻辑，一段讲现场收音的取舍。报得出实测规格，这一页就立住了。></p></div></div>
+    </div>
+  </div>
+  <div class="foot"><span class="sig"><大会名></span><span class="no">4/8</span></div>
+</section>
+
+<!-- ═══ P5 排期表：「合作确定后」的时间线，不是能力形容词 ═══ -->
+<section class="page">
+  <div class="wrap">
+    <div class="sect-head"><div class="over">Timeline</div><h2>合作确定之后</h2><div class="rule"></div></div>
+    <table class="tl">
+      <tr><td><T-14 天></td><td><确认拍摄计划：讲者名单、展台清单、分镜草图></td></tr>
+      <tr><td><T-3 天></td><td><到场踩点，确认机位与收音></td></tr>
+      <tr><td><大会日></td><td><全天拍摄，当晚出精选 30 张></td></tr>
+      <tr><td><T+3 天></td><td><主片初剪交付></td></tr>
+    </table>
+  </div>
+  <div class="foot"><span class="sig"><大会名></span><span class="no">5/8</span></div>
+</section>
+
+<!-- ═══ P6 ⭐置换方案：内容挂对方官方渠道，完全授权（在报价之前！） ═══ -->
+<section class="page">
+  <div class="wrap">
+    <div class="sect-head"><div class="over">Barter</div><h2>如果走置换，这一整套我都不收钱</h2><div class="rule"></div></div>
+    <div class="swap">
+      <div class="item"><span class="arw">→</span><span class="give">主片 + 精选照片</span><span class="get">挂你们的 <YouTube / 官网 highlight></span></div>
+      <div class="item"><span class="arw">→</span><span class="give">完全授权</span><span class="get">官方渠道长期使用，署名即可</span></div>
+      <div class="item"><span class="arw">→</span><span class="give">我需要</span><span class="get">媒体证 + 拍摄许可</span></div>
+    </div>
+    <div class="txt" style="margin-top:28px"><p>⛔ 不写「全部免费」→ 写「<b>如果置换可行，我愿意免费做</b>」。留谈判空间。</p></div>
+  </div>
+  <div class="foot"><span class="sig"><大会名></span><span class="no">6/8</span></div>
+</section>
+
+<!-- ═══ P7 ⭐报价：分项 8 行 + 单日全包绿色突出（class=hero） ═══ -->
+<section class="page price-page">
+  <div class="wrap">
+    <div class="sect-head"><div class="over">Pricing</div><h2>如果你们更希望付费合作（附报价）</h2><div class="rule"></div></div>
+    <div class="cols">
+      <div class="col"><table class="price">
+        <tr><th>项目</th><th>报价</th></tr>
+        <tr><td>活动现场摄影<small><一天一场，含当天精选 30 张></small></td><td>¥<500> / 场</td></tr>
+        <tr><td>视频拍摄<small><在摄影基础上增加视频></small></td><td>+ ¥<1,500> / day</td></tr>
+        <tr><td>讲师 / 开发者访谈<small><单人访谈，含前期沟通></small></td><td>+ ¥<1,500> / day</td></tr>
+        <tr><td>简单短片<small><现场素材直接剪成单条></small></td><td>¥<80-100> / 条</td></tr>
+        <tr><td>有讲者深入沟通的单条<small><含单独约访、沟通、拍摄与剪辑></small></td><td>¥<800> / 条</td></tr>
+        <tr><td>60-90 秒主片<small><现场短片级别的完整成片></small></td><td>¥<500></td></tr>
+        <tr class="hero"><td>单日全包<small>摄影 + 视频 + 访谈 + 主片，当天全部做完</small></td><td>¥<3,000></td></tr>
+      </table></div>
+      <div class="col vstitch"><div class="txt">
+        <p>上面是我<b><一个人接活动的日常价格></b>，不是给 <大会名> 的特报价。</p>
+        <p><b>但如果走置换，这一整套我都不收钱</b>——我更在意的是内容能被你们的官方渠道用起来。</p>
+      </div></div>
+    </div>
+  </div>
+  <div class="foot"><span class="sig"><大会名></span><span class="no">7/8</span></div>
+</section>
+
+<!-- ═══ P8 需求+联系：媒体证/拍摄许可/身份说明（⛔ 不提门票赞助） ═══ -->
+<section class="page">
+  <div class="wrap">
+    <div class="sect-head"><div class="over">Contact</div><h2>我需要的东西 & 联系方式</h2><div class="rule"></div></div>
+    <div class="cols">
+      <div class="col"><div class="txt"><p><b>我需要：</b>媒体证、拍摄许可、<身份说明一句话>。</p><p>⛔ 这一页不提门票、不提赞助。</p></div></div>
+      <div class="col vstitch"><div class="credits">
+        <div class="row"><span class="k">邮箱</span><span class="v"><你的邮箱></span></div>
+        <div class="row"><span class="k">微信</span><span class="v"><你的微信>（注明 <大会名>）</span></div>
+        <div class="row"><span class="k">作品集</span><span class="v"><你的作品集链接></span></div>
+        <div class="row"><span class="k"><其他平台></span><span class="v"><链接></span></div>
+      </div></div>
+    </div>
+  </div>
+  <div class="foot"><span class="sig"><大会名></span><span class="no">8/8</span></div>
+</section>
+
+</body>
+</html>

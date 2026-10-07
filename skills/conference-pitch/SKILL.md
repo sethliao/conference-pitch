@@ -1,12 +1,14 @@
 ---
 name: conference-pitch
-description: 技术大会现场内容合作提案全流程。当用户说「下一个大会」「想跟 X 大会合作」「做个提案」「给大会发邮件」时使用。把「为技术大会做现场内容（主片/拆解/摄影）换媒体证+置换+报价」这套提案，从一个大会复制到下一个大会。触发词：大会、conference、提案、proposal、媒体证、置换、报价、pitch。
+description: 技术大会现场内容合作提案全流程。Use when the user wants to pitch a tech conference for on-site content partnership (media pass / barter / pricing) — 当用户说「下一个大会」「想跟 X 大会合作」「做个提案」「给大会发邮件」时使用。输入大会名+官网，输出 8 页提案 HTML/PDF（含就地编辑层、报价页、置换方案）+ 短邮件 + 发信清单。触发词：大会、conference、提案、proposal、pitch、media pass、barter、报价、置换。
+license: CC-BY-NC-4.0
 ---
 
 # conference-pitch · 大会媒体合作提案全流程
 
 > **一句话**：把「为技术大会做现场内容（主片/讲师拆解/摄影）换媒体证 + 置换 + 报价」这套提案，从一个大会复制到下一个大会。
 > **参考实现**：GOSIM Shenzhen 2026（全流程跑通：8 页提案 PDF + 4 段邮件 + 发信清单）。**换大会 = 重走 Phase 0-6，骨架不动，只换内容。**
+> 🇬🇧 English version: [SKILL.en.md](SKILL.en.md)
 
 ```mermaid
 flowchart LR
@@ -80,6 +82,8 @@ img-pool-gdrive/  ← 云盘导入的候选（压到 1600px）
 
 ## Phase 3 · Proposal 8 页 HTML（骨架可复用，内容全换）
 
+**起手式：复制 `templates/proposal.html`** —— 完整设计系统（深空黑 #05070D × 电光蓝 #2E5BFF）+ 8 页骨架，所有 `<尖括号>` 都是待填占位，每页带注释说明该页作用与换大会时改什么。
+
 8 页骨架（每页的作用）：
 
 | 页 | 作用 | 换大会时 |
@@ -96,15 +100,15 @@ img-pool-gdrive/  ← 云盘导入的候选（压到 1600px）
 技术要点：
 - **页面尺寸**：`.page{width:1920px;height:1080px}` + `@page{size:1920px 1080px;margin:0}` —— 16:9，同时是 PPT 逻辑。
 - 🚨 页脚用 `position:absolute` 挂在 `.page` 上——新页记得带，页码手写。
-- 可做一个「就地编辑层」（contenteditable + 换图 + 导出 PDF），改稿不用回源码。
+- ⭐ **就地编辑层（改稿不用回源码）**：`python3 scripts/inject_editor.py <提案.html>`（幂等，可重复跑）——注入后浏览器打开即可 ✏️ 编辑文字、🖼 点图裁剪/换图（拖框裁剪 + 亮度/不透明度/模糊滑杆 + 图库侧边栏 + 上传）、🔗 链接体检（显示文字与 href 不一致会报警）、⬇️ 导出 PDF、⬇️ 下载修改版（自包含单文件）。改动先存 localStorage，**「下载修改版」覆盖原文件才算固化**。编辑层真源 = `scripts/proposal-editor-layer.html`（CSS+JS 标记块，升级只换这一份）。
 
 ---
 
 ## Phase 4 · 导出 PDF + 验收
 
 ```bash
-"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --no-sandbox --disable-gpu \
-  --no-pdf-header-footer --print-to-pdf="proposal.pdf" "file://$PWD/index.html"
+bash scripts/export_pdf.sh <提案.html> [输出.pdf]
+# = headless Chrome 出 PDF + pdftoppm 逐页导出验收图到 pdf-check/
 ```
 
 - ⛔ **命令不报错 ≠ 排版没崩**。出完必须逐页看图：`pdftoppm -r 96 -png proposal.pdf /tmp/page` → 逐页看。
