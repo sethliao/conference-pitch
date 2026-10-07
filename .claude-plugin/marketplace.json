@@ -1,0 +1,14 @@
+{
+  "name": "conference-pitch-marketplace",
+  "owner": {
+    "name": "Zhipeng Seth Liao",
+    "url": "https://github.com/sethliao"
+  },
+  "plugins": [
+    {
+      "name": "conference-pitch",
+      "source": "./",
+      "description": "技术大会现场内容合作提案全流程：输入一个大会，输出 8 页提案 PDF + 一封可发送的邮件。"
+    }
+  ]
+}
