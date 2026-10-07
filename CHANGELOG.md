@@ -2,6 +2,12 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [1.2.2] - 2026-10-07
+
+### Changed
+- 🇬🇧 README 改为英文优先：`README.md` = English，中文挪 `README.zh-CN.md`，两份头部居中 + 语言切换互链（对标 VoiceStudio / anthropics/skills）
+- 加 skills.sh 徽章（收录为自动爬取：public + 合规 SKILL.md + topic `agent-skills` 即满足条件）
+
 ## [1.2.1] - 2026-10-07
 
 ### Fixed
