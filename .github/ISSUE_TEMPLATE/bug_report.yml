@@ -1,0 +1,31 @@
+name: 🐛 Bug report
+description: Skill 没触发、触发错了、脚本跑挂了
+title: "[Bug] "
+labels: [bug]
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: 问题出在哪
+      options:
+        - Skill 没触发 / 触发错了
+        - 模板内容有问题
+        - scripts/ 脚本跑挂了
+        - 文档看不懂 / 有错误
+        - 其他
+  - type: textarea
+    id: repro
+    attributes:
+      label: 你做了什么、看到了什么
+      description: 你对 agent 说了什么？它的反应是什么？期望是什么？
+      placeholder: |
+        我说：……
+        它做了：……
+        我期望：……
+    validations:
+      required: true
+  - type: textarea
+    id: env
+    attributes:
+      label: 环境（可选）
+      placeholder: 用什么 agent（Claude Code / Cursor / …）、怎么装的 skill

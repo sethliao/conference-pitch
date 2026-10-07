@@ -1,5 +1,9 @@
 # conference-pitch
 
+[![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC--BY--NC%204.0-lightgrey.svg)](LICENSE)
+[![Validate Skills](https://github.com/sethliao/conference-pitch/actions/workflows/validate-skills.yml/badge.svg)](https://github.com/sethliao/conference-pitch/actions/workflows/validate-skills.yml)
+[![Install](https://img.shields.io/badge/install-npx%20skills%20add-2E5BFF)](https://skills.sh)
+
 > 看到一个想合作的大会，到把提案和邮件发出去——中间隔着一堆 admin work。这个 skill 把这堆事做成了一条流水线。
 
 **[English README](README.en.md)**

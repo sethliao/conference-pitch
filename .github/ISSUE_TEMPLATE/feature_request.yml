@@ -1,0 +1,18 @@
+name: 💡 Feature request
+description: 流程建议、模板改进、想晒你的实战反馈
+title: "[Feature] "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: 想要什么
+      placeholder: 哪一站 / 哪个模板 / 哪条判据，想怎么改？或者你跑通了什么？
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: 为什么（实战场景）
+      description: 判据库的信条是「每条都来自真实跑通」——说说你的场景，比讲道理有用
+      placeholder: 我在跟 X 大会谈的时候发现……

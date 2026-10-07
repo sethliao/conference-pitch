@@ -1,5 +1,9 @@
 # conference-pitch
 
+[![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC--BY--NC%204.0-lightgrey.svg)](LICENSE)
+[![Validate Skills](https://github.com/sethliao/conference-pitch/actions/workflows/validate-skills.yml/badge.svg)](https://github.com/sethliao/conference-pitch/actions/workflows/validate-skills.yml)
+[![Install](https://img.shields.io/badge/install-npx%20skills%20add-2E5BFF)](https://skills.sh)
+
 > From spotting a conference you want to work with, to sending the proposal and email — there's a pile of admin work in between. This skill turns that pile into a pipeline.
 
 **[中文 README](README.md)**
