@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title><标题>（点开即编辑）</title>
+<!-- 用法：填内容 → python3 scripts/inject_editor.py deck.html → 浏览器打开改字/换图 → 工具条 ⬇️ 导出 PDF -->
+<style>
+:root{
+  --blue-700:#1A38B8; --blue-500:#2E5BFF; --blue-400:#4D74FF; --blue-300:#7D9BFF;
+  --success:#3DD68C; --warning:#FBBF24;
+  --bg-base:#05070D; --bg-elevated:#0B0F1A; --panel:#101725;
+  --stroke-subtle:#1E2A44; --stroke-strong:#2E3D5F;
+  --text-primary:#F2F5FA; --text-secondary:#9AA7BD; --text-tertiary:#5B6B85;
+  --mono:'JetBrains Mono',ui-monospace,monospace;
+  --cjk:'Noto Sans SC','Noto Sans CJK SC','PingFang SC',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{background:var(--bg-base);font-family:var(--cjk);color:var(--text-primary)}
+.page{width:1920px;height:1080px;background:var(--bg-base);position:relative;margin:0 auto 48px;overflow:hidden;padding:100px 140px;display:flex;flex-direction:column;justify-content:center}
+@page{size:1920px 1080px;margin:0}
+@media print{
+  .page{margin:0;page-break-after:always;page-break-inside:avoid}
+  .page:last-child{page-break-after:auto}
+}
+h1{font-size:64px;font-weight:800;line-height:1.25;margin-bottom:48px}
+h1 .br{color:var(--blue-500)}
+h2{font-size:40px;font-weight:700}
+p{font-size:28px;line-height:1.75;color:var(--text-secondary)}
+p b{color:var(--text-primary);font-weight:600}
+.chip{display:inline-flex;align-items:center;padding:12px 24px;border:1px solid var(--stroke-strong);border-radius:8px;font-size:24px;font-weight:500;color:var(--text-secondary)}
+.tag{font-family:var(--mono);font-size:18px;letter-spacing:4%;color:var(--blue-300);border:1px solid var(--stroke-strong);border-radius:6px;padding:8px 16px}
+.big{font-weight:800;font-size:96px;line-height:1.1}
+.foot{position:absolute;left:140px;right:140px;bottom:36px;display:flex;justify-content:space-between;align-items:center;z-index:2}
+.foot .sig{font-size:15px;color:var(--text-tertiary)}
+.foot .no{font-family:var(--mono);font-size:13px;color:var(--blue-500)}
+.row{display:flex;align-items:center;gap:28px;flex-wrap:wrap}
+.arw{font-size:44px;color:var(--blue-500);font-weight:800}
+.cardbox{flex:1;border:2px solid var(--stroke-subtle);border-radius:16px;padding:36px;text-align:center;background:var(--panel);min-width:300px}
+.cardbox.hot{border-color:var(--blue-500)}
+.stgrid{display:flex;align-items:center;gap:16px;flex-wrap:nowrap}
+.st{flex:1;border:2px solid var(--stroke-subtle);border-radius:14px;padding:28px 12px;text-align:center;background:var(--panel)}
+.st.on{background:var(--blue-500);border-color:var(--blue-500)}
+.st.on .chip{border-color:rgba(255,255,255,.5);color:#fff}
+.st.on p{color:#DDE4FF}
+.vs{display:flex;gap:48px}
+.vs .col{flex:1;background:var(--panel);border:1px solid var(--stroke-subtle);border-radius:16px;padding:44px}
+.vs .col.hot{border-color:var(--blue-500)}
+code{display:block;background:#0A0E18;border-radius:12px;padding:28px 32px;font-size:24px;line-height:1.7;font-family:var(--mono);color:#C9D4FF;white-space:pre;margin-top:24px}
+.mailbox{background:var(--panel);border:1px solid var(--stroke-subtle);border-radius:16px;padding:44px 52px}
+.mailbox .subj{border-bottom:1px solid var(--stroke-subtle);padding-bottom:20px;margin-bottom:24px}
+.urlbox{font-family:var(--mono);font-size:56px;color:var(--blue-500);font-weight:700;border:3px solid var(--blue-500);border-radius:20px;padding:36px 60px;margin:32px 0 44px;display:inline-block}
+.center{text-align:center;align-items:center}
+</style>
+</head>
+<body>
+
+<!-- ⛔ 每页必须 <section class="page">；可编辑文字只用 h1/h2/h3/p/.chip/.tag/.big（编辑层 SEL） -->
+<!-- P1 封面式 -->
+<section class="page">
+  <h1><一句话锚> <span class="br"><强调部分></span></h1>
+  <p><一段说明：这页讲什么></p>
+  <div class="row" style="margin-top:40px"><span class="chip"><标签1></span><span class="chip"><标签2></span><span class="chip"><标签3></span></div>
+  <div class="foot"><span class="sig"><署名></span><span class="no">1/3</span></div>
+</section>
+
+<!-- P2 内容式（三卡） -->
+<section class="page">
+  <h1><内容页标题></h1>
+  <div class="row">
+    <div class="cardbox"><h2><卡1></h2><p><说明></p></div>
+    <div class="cardbox hot"><h2><卡2（高亮）></h2><p><说明></p></div>
+    <div class="cardbox"><h2><卡3></h2><p><说明></p></div>
+  </div>
+  <div class="foot"><span class="sig"><署名></span><span class="no">2/3</span></div>
+</section>
+
+<!-- P3 CTA 式 -->
+<section class="page center">
+  <h1><行动号召> <span class="br"><强调></span></h1>
+  <div class="urlbox"><你的链接></div>
+  <p><一行补充></p>
+  <div class="foot"><span class="sig"><署名></span><span class="no">3/3</span></div>
+</section>
+
+</body>
+</html>
