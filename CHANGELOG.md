@@ -2,6 +2,11 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [1.2.1] - 2026-10-07
+
+### Fixed
+- `templates/deck.html` / `templates/proposal.html` 加自适应缩放：100% 缩放即可看全页（屏幕窄时整体缩小，打印自动还原 1920）——不再要手动缩到 80%
+
 ## [1.2.0] - 2026-10-07
 
 ### Added

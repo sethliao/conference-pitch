@@ -20,7 +20,7 @@ body{background:var(--bg-base);font-family:var(--cjk);color:var(--text-primary)}
 .page{width:1920px;height:1080px;background:var(--bg-base);position:relative;margin:0 auto 48px;overflow:hidden;padding:100px 140px;display:flex;flex-direction:column;justify-content:center}
 @page{size:1920px 1080px;margin:0}
 @media print{
-  .page{margin:0;page-break-after:always;page-break-inside:avoid}
+  .page{margin:0;page-break-after:always;page-break-inside:avoid;zoom:1!important}
   .page:last-child{page-break-after:auto}
 }
 h1{font-size:64px;font-weight:800;line-height:1.25;margin-bottom:48px}
@@ -83,5 +83,15 @@ code{display:block;background:#0A0E18;border-radius:12px;padding:28px 32px;font-
   <div class="foot"><span class="sig"><署名></span><span class="no">3/3</span></div>
 </section>
 
+<script data-autofit>
+/* 自适应：100% 缩放看全页（设计稿 1920 宽，屏窄整体缩小；打印还原） */
+(function(){
+  function fit(){
+    var s = Math.min(1, (window.innerWidth - 24) / 1920);
+    document.querySelectorAll('.page').forEach(function(p){ p.style.zoom = s; });
+  }
+  window.addEventListener('resize', fit); fit();
+})();
+</script>
 </body>
 </html>
